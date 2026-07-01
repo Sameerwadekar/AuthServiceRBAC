@@ -1,5 +1,6 @@
 package com.learn.auth.entities;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -45,8 +46,12 @@ public class User implements UserDetails{
 	private Role role;
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		// TODO Auto-generated method stub
-		return Arrays.asList(new SimpleGrantedAuthority(role.getRoleName().toString()));
+		List<GrantedAuthority> authorities = new ArrayList<>();
+		authorities.add(new SimpleGrantedAuthority(role.getRoleName().name()));
+		for (Permission permission : role.getPermissions()) {
+			authorities.add(new SimpleGrantedAuthority(permission.getName()));
+		}
+		return authorities;
 	}
 	@Override
 	public String getUsername() {

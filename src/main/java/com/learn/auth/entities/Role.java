@@ -1,16 +1,12 @@
 package com.learn.auth.entities;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,7 +21,11 @@ public class Role {
 	private int roleId;
 	@Enumerated(EnumType.STRING)
 	private AppRole roleName;
-	@OneToMany(mappedBy = "role")
-	@JsonManagedReference
-	private List<User> users;
+	@ManyToMany(fetch = FetchType.EAGER)
+	@JoinTable(
+			name = "role_permissions",
+			joinColumns = @JoinColumn(name = "role_id"),
+			inverseJoinColumns = @JoinColumn(name = "permission_id")
+	)
+	private Set<Permission> permissions = new HashSet<>();
 }
