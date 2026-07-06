@@ -3,6 +3,7 @@ package com.learn.auth.controller;
 import com.learn.auth.entities.User;
 import com.learn.auth.security.LoginRequest;
 import com.learn.auth.security.LoginResponse;
+import com.learn.auth.security.RefreshTokenRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,20 +39,22 @@ public class UserController {
 	@GetMapping("/me")
 	public ResponseEntity<UserDto> getCurrentUser(Authentication authentication) {
 		UserDto userDto = userService.getCurrentUser(authentication);
-		return ResponseEntity.ok(userDto)
+		return ResponseEntity.ok(userDto);
 	}
 
-//	@PostMapping("/refresh")
-//	public ResponseEntity<LoginResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
-//		RefreshToken refreshToken = refreshTokenService.verifyRefreshToken(request.getRefreshToken());
-//		User user = refreshToken.getUser();
-//		String newAccessToken = jwtUtils.generateTokenFromUsername(user);
-//		LoginResponse response = new LoginResponse();
-//		response.setAccessToken(newAccessToken);
-//		response.setRefreshToken(refreshToken.getToken());
-//		response.setUserDto(modelMapper.map(user, UserDto.class));
-//		return ResponseEntity.ok(response);
-//	}
+	@PostMapping("/refresh")
+	public ResponseEntity<LoginResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
+		LoginResponse loginResponse = userService.refreshToken(request);
+		return ResponseEntity.ok(loginResponse);
+	}
 
-	//till refresh token step 10
+	@PostMapping("/logout")
+	public ResponseEntity<?> logout(Authentication authentication) {
+		try{
+			userService.logOut(authentication);
+			return ResponseEntity.ok("Logged out successfully");
+		} catch (RuntimeException e) {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+		}
+	}
 }

@@ -3,6 +3,7 @@ package com.learn.auth.service;
 import com.learn.auth.entities.RefreshToken;
 import com.learn.auth.security.LoginRequest;
 import com.learn.auth.security.LoginResponse;
+import com.learn.auth.security.RefreshTokenRequest;
 import com.learn.auth.security.jwt.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -65,8 +66,6 @@ public class UserServiceImpl implements UserService {
 		return response;
 	}
 
-	public
-
 	private User dtoToUser(UserDto dto) {
 		User user = new User();
 		user.setId(dto.getId());
@@ -94,5 +93,26 @@ public class UserServiceImpl implements UserService {
 		String email = authentication.getName();
 		User user = userRepositary.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 		return userToDto(user);
+	}
+
+	@Override
+	public LoginResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
+		RefreshToken refreshToken = refreshTokenService.verifyRefreshToken(refreshTokenRequest.getRefreshToken());
+		User user = refreshToken.getUser();
+		String newAccessToken = jwtUtils.generateTokenFromUsername(user);
+		LoginResponse response = new LoginResponse();
+		response.setAccessToken(newAccessToken);
+		response.setRefreshToken(refreshToken.getToken());
+		response.setUserDto(userToDto(user));
+		return response;
+	}
+
+	@Override
+	public void logOut(Authentication authentication) {
+		if (authentication == null || !authentication.isAuthenticated()) {
+			throw new RuntimeException("User is not authenticated.");
+		}
+		User user = (User) authentication.getPrincipal();
+		refreshTokenService.deleteByUser(user);
 	}
 }

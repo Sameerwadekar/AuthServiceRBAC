@@ -1,10 +1,10 @@
 package com.learn.auth.security;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -18,14 +18,17 @@ import com.learn.auth.security.jwt.AuthTokenFilter;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
-	
-	@Autowired
-	private AuthTokenFilter authTokenFilter;
-	
-	@Autowired
-	private AuthEntryPointJwt authEntryPointJwt;
-	
+
+	private final AuthTokenFilter authTokenFilter;
+	private final AuthEntryPointJwt authEntryPointJwt;
+
+	public SecurityConfig(AuthTokenFilter authTokenFilter, AuthEntryPointJwt authEntryPointJwt) {
+		this.authTokenFilter = authTokenFilter;
+		this.authEntryPointJwt = authEntryPointJwt;
+	}
+
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
 		httpSecurity.csrf(csrf -> csrf.disable())
@@ -37,19 +40,7 @@ public class SecurityConfig {
         .formLogin(form -> form.disable())
         .httpBasic(basic -> basic.disable())
         .requestCache(cache -> cache.disable())
-		.authorizeHttpRequests(req -> req.requestMatchers(HttpMethod.POST,"/users/**","/auth/login","/cart/**","/cart-item/**","/products/**").permitAll()
-		.requestMatchers(HttpMethod.GET, "/product/**", "/products/**", "/categories/**","/cart/**").permitAll()
-		.requestMatchers(
-			    "/",
-			    "/health",
-			    "/favicon.ico"
-			).permitAll()
-		.requestMatchers(HttpMethod.DELETE,"/cart/**").permitAll()
-		.requestMatchers(HttpMethod.PUT,"/cart/**").permitAll()
-		.requestMatchers(HttpMethod.GET,"/orders/new-order").hasRole("ADMIN")
-		.requestMatchers(HttpMethod.POST, "/oauth2/**").permitAll()
-		.requestMatchers(HttpMethod.GET,"/oauth2/**").permitAll()
-		.requestMatchers("/login", "/login/**", "/error").permitAll()
+		.authorizeHttpRequests(req -> req.requestMatchers("/", "/health", "/favicon.ico", "/auth/login", "/auth/refresh", "/users/**").permitAll()
 		.anyRequest().authenticated()) ;
 		httpSecurity.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 		return httpSecurity.build();

@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 public class Role {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
-	private int roleId;
+	private Long roleId;
 	@Enumerated(EnumType.STRING)
 	private AppRole roleName;
 	@ManyToMany(fetch = FetchType.EAGER)

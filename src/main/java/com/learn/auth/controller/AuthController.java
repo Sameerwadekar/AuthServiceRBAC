@@ -1,72 +1,44 @@
 package com.learn.auth.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import com.learn.auth.dtos.UpdateRolePermissionsRequest;
+import com.learn.auth.entities.Permission;
+import com.learn.auth.entities.Role;
+import com.learn.auth.service.AuthService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
-import com.learn.auth.dtos.UserDto;
-import com.learn.auth.entities.User;
-import com.learn.auth.repositary.UserRepositary;
-import com.learn.auth.security.LoginRequest;
-import com.learn.auth.security.LoginResponse;
-import com.learn.auth.security.jwt.JwtUtils;
+import java.util.Set;
 
-@RestController
-@RequestMapping("/auth")
-@CrossOrigin
+@RestController("/auth")
 public class AuthController {
-	@Autowired
-	private UserRepositary userRepositary;
-	
-	@Autowired
-	private JwtUtils jwtUtils;
-	
-	@Autowired
-	private AuthenticationManager authenticationManager;
-	
-	@PostMapping("/login")
-	public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
-		String email = loginRequest.getEmail();
-		String password = loginRequest.getPassword();
-		Authentication authenticate = authenticationManager.authenticate(
-				new UsernamePasswordAuthenticationToken(email, password));
-		SecurityContextHolder.getContext().setAuthentication(authenticate);
-		User user = (User) authenticate.getPrincipal();
-		String token = jwtUtils.generateTokenFromUsername(user);
-		LoginResponse loginResponse = new LoginResponse();
-		loginResponse.setToken(token);
-		loginResponse.setUserDto(userToDto(user));
-		return  ResponseEntity.ok(loginResponse);
-	}
-	
-	@GetMapping("/me")
-	public ResponseEntity<UserDto> getCurrentUser(Authentication authentication) {
-	    String email = authentication.getName();
-	    User user = userRepositary.findByEmail(email)
-	            .orElseThrow(() -> new RuntimeException("User not found"));
-	    return ResponseEntity.ok(userToDto(user));
-	}
+    private final AuthService authService;
 
-	private UserDto userToDto(User user) {
-		UserDto dto = new UserDto();
-		dto.setId(user.getId());
-		dto.setName(user.getName());
-		dto.setEmail(user.getEmail());
-		if (user.getRole() != null) {
-			dto.setRoleName(user.getRole().getRoleName().name());
-		}
-		dto.setPassword(null);
-		dto.setConfirmPassword(null);
-		return dto;
-	}
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
+    @GetMapping("/permission")
+    public ResponseEntity<Set<Permission>> getAllPermission(){
+        Set<Permission> permissions = authService.getAllPermission();
+        return ResponseEntity.ok(permissions);
+    }
+
+    @GetMapping("/roles")
+    public ResponseEntity<Set<Role>> getAllRoles(){
+        Set<Role> role = authService.getAllRoles();
+        return ResponseEntity.ok(role);
+    }
+
+    @GetMapping("/roles/{roleId}/permissions")
+    public ResponseEntity<Set<Permission>> getPermissionByRole(@PathVariable Long roleId){
+        return ResponseEntity.ok(authService.getPermissionsByRoleId(roleId));
+    }
+
+    @PreAuthorize("hasAuthority('ROLE_PERMISSION_UPDATE')")
+    @PutMapping("/roles/{roleId}/permissions")
+    public ResponseEntity<Role> updateRolePermissions(@PathVariable Long roleId, @RequestBody UpdateRolePermissionsRequest request) {
+        Role updatedRole = authService.updateRolePermissions(roleId, request.getPermissionIds());
+        return ResponseEntity.ok(updatedRole);
+    }
 }
