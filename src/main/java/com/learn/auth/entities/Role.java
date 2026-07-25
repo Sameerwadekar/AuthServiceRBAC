@@ -17,10 +17,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Role {
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long roleId;
-	@Enumerated(EnumType.STRING)
-	private AppRole roleName;
+	private String roleName;
 	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(
 			name = "role_permissions",

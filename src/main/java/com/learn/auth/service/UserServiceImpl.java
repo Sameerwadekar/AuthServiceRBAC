@@ -15,7 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.learn.auth.dtos.UserDto;
-import com.learn.auth.entities.AppRole;
 import com.learn.auth.entities.Role;
 import com.learn.auth.entities.User;
 import com.learn.auth.repositary.RoleRepositary;
@@ -45,7 +44,7 @@ public class UserServiceImpl implements UserService {
 	public UserDto createUser(UserDto userDto) {
 		User user = dtoToUser(userDto);
 		user.setPassword(passwordEncoder.encode(user.getPassword()));
-		Role role = roleRepositary.findByRoleName(AppRole.ROLE_USER)
+		Role role = roleRepositary.findByRoleName("ROLE_USER")
 				.orElseThrow(() -> new RuntimeException("Role Not Found"));
 		user.setRole(role);
 		User savedUser = userRepositary.save(user);
@@ -81,7 +80,7 @@ public class UserServiceImpl implements UserService {
 		dto.setName(user.getName());
 		dto.setEmail(user.getEmail());
 		if (user.getRole() != null) {
-			dto.setRoleName(user.getRole().getRoleName().name());
+			dto.setRoleName(user.getRole().getRoleName());
 		}
 		dto.setPassword(null);
 		dto.setConfirmPassword(null);
