@@ -1,7 +1,6 @@
 package com.learn.auth.security;
 
 import com.learn.auth.dtos.UserDto;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

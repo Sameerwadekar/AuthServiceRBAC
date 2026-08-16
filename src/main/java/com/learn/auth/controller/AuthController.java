@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Set;
 
-@RestController("/auth")
+@RestController
+@RequestMapping("/auth")
 public class AuthController {
     private final AuthService authService;
 

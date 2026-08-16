@@ -1,10 +1,10 @@
 package com.learn.temp_backend;
 
+import com.learn.auth.WorkFlowAuth;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import com.learn.auth.TempBackendApplication;
 
-@SpringBootTest(classes = TempBackendApplication.class)
+@SpringBootTest(classes = WorkFlowAuth.class)
 class TempBackendApplicationTests {
 
 	@Test

@@ -30,27 +30,29 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception{
+	SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 		httpSecurity.csrf(csrf -> csrf.disable())
-		.cors(cors -> {})
-		.exceptionHandling(ex -> ex.authenticationEntryPoint(authEntryPointJwt))
-        .sessionManagement(session ->
-            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        )
-        .formLogin(form -> form.disable())
-        .httpBasic(basic -> basic.disable())
-        .requestCache(cache -> cache.disable())
-		.authorizeHttpRequests(req -> req.requestMatchers("/", "/health", "/favicon.ico", "/auth/login", "/auth/refresh", "/users/**").permitAll()
-		.anyRequest().authenticated()) ;
+				.cors(cors -> {})
+				.exceptionHandling(ex -> ex.authenticationEntryPoint(authEntryPointJwt))
+				.sessionManagement(session ->
+						session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+				)
+				.formLogin(form -> form.disable())
+				.httpBasic(basic -> basic.disable())
+				.requestCache(cache -> cache.disable())
+				.authorizeHttpRequests(req -> req
+						.requestMatchers("/", "/health", "/favicon.ico", "/users/register", "/users/login", "/users/refresh").permitAll()
+						.anyRequest().authenticated()
+				);
 		httpSecurity.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 		return httpSecurity.build();
 	}
-	
+
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return new BCryptPasswordEncoder();
 	}
-	
+
 	@Bean
 	public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
 		return authenticationConfiguration.getAuthenticationManager();

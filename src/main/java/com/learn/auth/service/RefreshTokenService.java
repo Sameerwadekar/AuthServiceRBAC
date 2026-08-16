@@ -3,9 +3,9 @@ package com.learn.auth.service;
 import com.learn.auth.entities.RefreshToken;
 import com.learn.auth.entities.User;
 import com.learn.auth.repositary.RefreshTokenRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -13,7 +13,7 @@ import java.util.UUID;
 @Service
 public class RefreshTokenService {
 
-    @Value("${spring.app.refreshExpirationMs}")
+    @Value("${spring.app.refreshExpirationMs:604800000}")
     private Long refreshExpirationMs;
 
     private final RefreshTokenRepository refreshTokenRepository;
@@ -22,6 +22,7 @@ public class RefreshTokenService {
         this.refreshTokenRepository = refreshTokenRepository;
     }
 
+    @Transactional
     public RefreshToken createRefreshToken(User user) {
         refreshTokenRepository.deleteByUser(user);
         RefreshToken refreshToken = new RefreshToken();
@@ -44,7 +45,13 @@ public class RefreshTokenService {
         return refreshToken;
     }
 
+    @Transactional
     public void deleteByUser(User user) {
         refreshTokenRepository.deleteByUser(user);
+    }
+
+    @Transactional
+    public void deleteByToken(String token) {
+        refreshTokenRepository.deleteByToken(token);
     }
 }
