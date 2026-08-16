@@ -41,7 +41,7 @@ public class SecurityConfig {
 				.httpBasic(basic -> basic.disable())
 				.requestCache(cache -> cache.disable())
 				.authorizeHttpRequests(req -> req
-						.requestMatchers("/", "/health", "/favicon.ico", "/users/register", "/users/login", "/users/refresh").permitAll()
+						.requestMatchers("/", "/health", "/favicon.ico", "/users/register", "/users/login", "/users/refresh", "/auth/public-key").permitAll()
 						.anyRequest().authenticated()
 				);
 		httpSecurity.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);

@@ -4,8 +4,6 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -17,9 +15,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.WebUtils;
 
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.Base64;
 import java.util.Date;
 import java.util.stream.Collectors;
 
@@ -27,13 +25,10 @@ import java.util.stream.Collectors;
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-    @Value("${spring.app.jwtSecret}")
-    private String jwtSecret;
-
-    @Value("${spring.app.jwtExpirationMs}")
+    @Value("${spring.app.jwtExpirationMs:900000}")
     private long jwtExpirationMs;
 
-    @Value("${spring.app.refreshExpirationMs}")
+    @Value("${spring.app.refreshExpirationMs:604800000}")
     private long refreshExpirationMs;
 
     @Value("${spring.app.jwtCookieName:accessToken}")
@@ -41,6 +36,20 @@ public class JwtUtils {
 
     @Value("${spring.app.jwtRefreshCookieName:refreshToken}")
     private String jwtRefreshCookie;
+
+    @Value("${spring.app.jwt.key-id:auth-key-001}")
+    private String keyId;
+
+    @Value("${spring.app.jwt.issuer:workflow-auth}")
+    private String issuer;
+
+    private final PrivateKey privateKey;
+    private final PublicKey publicKey;
+
+    public JwtUtils(PrivateKey privateKey, PublicKey publicKey) {
+        this.privateKey = privateKey;
+        this.publicKey = publicKey;
+    }
 
     // Generate Access Token ResponseCookie from UserDetails
     public ResponseCookie generateAccessTokenCookie(UserDetails userDetails) {
@@ -108,41 +117,38 @@ public class JwtUtils {
         return null;
     }
 
+    // Generate asymmetric RS256 signed JWT
     public String generateTokenFromUsername(UserDetails userDetails) {
         String username = userDetails.getUsername();
         String roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
         return Jwts.builder()
+                .header().keyId(keyId).and()
+                .issuer(issuer)
                 .subject(username)
                 .claim("roles", roles)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(key())
+                .signWith(privateKey, Jwts.SIG.RS256)
                 .compact();
     }
 
+    // Verify and extract username using public key
     public String getUserNameFromJwtToken(String token) {
         return Jwts.parser()
-                .verifyWith((SecretKey) key())
+                .verifyWith(publicKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
     }
 
-    private Key key() {
-        try {
-            return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
-        } catch (IllegalArgumentException e) {
-            return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        }
-    }
-
+    // Verify token validity using public key
     public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parser()
-                    .verifyWith((SecretKey) key())
+                    .verifyWith(publicKey)
                     .build()
                     .parseSignedClaims(authToken);
             return true;
@@ -156,5 +162,13 @@ public class JwtUtils {
             logger.error("JWT claims string is empty: {}", e.getMessage());
         }
         return false;
+    }
+
+    // Return Public Key in PEM format for external services/gateways
+    public String getPublicKeyPem() {
+        String encoded = Base64.getEncoder().encodeToString(publicKey.getEncoded());
+        return "-----BEGIN PUBLIC KEY-----\n" +
+                encoded.replaceAll("(.{64})", "$1\n") +
+                "\n-----END PUBLIC KEY-----\n";
     }
 }
