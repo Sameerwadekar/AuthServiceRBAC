@@ -2,6 +2,7 @@ package com.learn.auth.service;
 
 import com.learn.auth.entities.Permission;
 import com.learn.auth.entities.Role;
+import com.learn.auth.exception.ResourceNotFoundException;
 import com.learn.auth.repositary.PermissionRepository;
 import com.learn.auth.repositary.RoleRepositary;
 import jakarta.transaction.Transactional;
@@ -16,7 +17,7 @@ public class AuthServiceImpl implements AuthService {
     private final PermissionRepository permissionRepository;
     private final RoleRepositary roleRepositary;
 
-    public AuthServiceImpl(PermissionRepository permissionRepository,RoleRepositary roleRepositary) {
+    public AuthServiceImpl(PermissionRepository permissionRepository, RoleRepositary roleRepositary) {
         this.permissionRepository = permissionRepository;
         this.roleRepositary = roleRepositary;
     }
@@ -38,8 +39,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public Role  updateRolePermissions(Long roleId, List<Long> permissionIds) {
-        Role role = roleRepositary.findById(roleId).orElseThrow(() -> new RuntimeException("Role not found"));
+    public Role updateRolePermissions(Long roleId, List<Long> permissionIds) {
+        Role role = roleRepositary.findById(roleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found with id: " + roleId));
         Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(permissionIds));
         role.getPermissions().clear();
         role.getPermissions().addAll(permissions);

@@ -1,7 +1,8 @@
 package com.learn.auth.controller;
 
-import com.learn.auth.dtos.MessageResponse;
+import com.learn.auth.dtos.ApiResponse;
 import com.learn.auth.dtos.UserDto;
+import com.learn.auth.exception.TokenRefreshException;
 import com.learn.auth.security.LoginRequest;
 import com.learn.auth.security.LoginResponse;
 import com.learn.auth.security.jwt.JwtUtils;
@@ -29,50 +30,46 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserDto> register(@RequestBody @Valid UserDto userDto) {
+    public ResponseEntity<ApiResponse<UserDto>> register(@RequestBody @Valid UserDto userDto) {
         UserDto user = userService.createUser(userDto);
-        return new ResponseEntity<>(user, HttpStatus.CREATED);
+        return new ResponseEntity<>(ApiResponse.success("User registered successfully", user), HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserDto> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<UserDto>> login(@RequestBody LoginRequest loginRequest) {
         LoginResponse loginResponse = userService.login(loginRequest);
         ResponseCookie accessCookie = jwtUtils.generateAccessTokenCookie(loginResponse.getAccessToken());
         ResponseCookie refreshCookie = jwtUtils.generateRefreshTokenCookie(loginResponse.getRefreshToken());
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
-                .body(loginResponse.getUserDto());
+                .body(ApiResponse.success("Login successful", loginResponse.getUserDto()));
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserDto> getCurrentUser(Authentication authentication) {
+    public ResponseEntity<ApiResponse<UserDto>> getCurrentUser(Authentication authentication) {
         UserDto userDto = userService.getCurrentUser(authentication);
-        return ResponseEntity.ok(userDto);
+        return ResponseEntity.ok(ApiResponse.success("User profile fetched successfully", userDto));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Void>> refreshToken(HttpServletRequest request) {
         String refreshToken = jwtUtils.getRefreshTokenFromCookies(request);
 
         if (refreshToken == null || refreshToken.isBlank()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse("Refresh Token missing"));
+            throw new TokenRefreshException("Refresh token is missing from request cookies");
         }
 
-        try {
-            String newAccessToken = userService.createNewAccessTokenFromRefresh(refreshToken);
-            ResponseCookie newAccessCookie = jwtUtils.generateAccessTokenCookie(newAccessToken);
+        String newAccessToken = userService.createNewAccessTokenFromRefresh(refreshToken);
+        ResponseCookie newAccessCookie = jwtUtils.generateAccessTokenCookie(newAccessToken);
 
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.SET_COOKIE, newAccessCookie.toString())
-                    .body(new MessageResponse("Token refreshed successfully"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new MessageResponse(e.getMessage()));
-        }
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, newAccessCookie.toString())
+                .body(ApiResponse.success("Token refreshed successfully"));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request, Authentication authentication) {
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request, Authentication authentication) {
         if (authentication != null) {
             userService.logOut(authentication);
         }
@@ -87,6 +84,6 @@ public class UserController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cleanAccess.toString())
                 .header(HttpHeaders.SET_COOKIE, cleanRefresh.toString())
-                .body(new MessageResponse("Logged out successfully"));
+                .body(ApiResponse.success("Logged out successfully"));
     }
 }

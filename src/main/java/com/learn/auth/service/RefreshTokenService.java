@@ -2,6 +2,7 @@ package com.learn.auth.service;
 
 import com.learn.auth.entities.RefreshToken;
 import com.learn.auth.entities.User;
+import com.learn.auth.exception.TokenRefreshException;
 import com.learn.auth.repositary.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -35,12 +36,12 @@ public class RefreshTokenService {
 
     public RefreshToken verifyRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+                .orElseThrow(() -> new TokenRefreshException("Refresh token not found"));
         if (refreshToken.isRevoked()) {
-            throw new RuntimeException("Refresh token revoked");
+            throw new TokenRefreshException("Refresh token is revoked");
         }
         if (refreshToken.getExpiryDate().isBefore(Instant.now())) {
-            throw new RuntimeException("Refresh token expired");
+            throw new TokenRefreshException("Refresh token is expired");
         }
         return refreshToken;
     }

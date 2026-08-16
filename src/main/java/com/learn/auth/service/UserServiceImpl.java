@@ -4,6 +4,7 @@ import com.learn.auth.dtos.UserDto;
 import com.learn.auth.entities.RefreshToken;
 import com.learn.auth.entities.Role;
 import com.learn.auth.entities.User;
+import com.learn.auth.exception.ResourceNotFoundException;
 import com.learn.auth.repositary.RoleRepositary;
 import com.learn.auth.repositary.UserRepositary;
 import com.learn.auth.security.LoginRequest;
@@ -45,7 +46,7 @@ public class UserServiceImpl implements UserService {
         User user = dtoToUser(userDto);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         Role role = roleRepositary.findByRoleName("ROLE_USER")
-                .orElseThrow(() -> new RuntimeException("Role Not Found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Role 'ROLE_USER' not found"));
         user.setRole(role);
         User savedUser = userRepositary.save(user);
         return userToDto(savedUser);
@@ -71,7 +72,7 @@ public class UserServiceImpl implements UserService {
     public UserDto getCurrentUser(Authentication authentication) {
         String email = authentication.getName();
         User user = userRepositary.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
         return userToDto(user);
     }
 
