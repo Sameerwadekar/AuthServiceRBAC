@@ -41,8 +41,7 @@ public class UserController {
         ResponseCookie accessCookie = jwtUtils.generateAccessTokenCookie(loginResponse.getAccessToken());
         ResponseCookie refreshCookie = jwtUtils.generateRefreshTokenCookie(loginResponse.getRefreshToken());
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
-                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, accessCookie.toString(), refreshCookie.toString())
                 .body(ApiResponse.success("Login successful", loginResponse.getUserDto()));
     }
 
