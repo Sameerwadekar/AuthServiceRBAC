@@ -97,6 +97,12 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Override
+    public UserDto getUserByEmail(String userEmail) {
+        User user = userRepositary.findByEmail(userEmail).orElseThrow(()->new ResourceNotFoundException("email not found"));
+        return userToDto(user);
+    }
+
     private User dtoToUser(UserDto dto) {
         User user = new User();
         user.setId(dto.getId());

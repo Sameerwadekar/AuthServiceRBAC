@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/users")
-@CrossOrigin
+// @CrossOrigin // Handled at API Gateway; commented out to avoid duplicate CORS headers
 public class UserController {
 
     private final UserService userService;
@@ -37,6 +37,7 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<UserDto>> login(@RequestBody LoginRequest loginRequest) {
+        System.out.println("request reached");
         LoginResponse loginResponse = userService.login(loginRequest);
         ResponseCookie accessCookie = jwtUtils.generateAccessTokenCookie(loginResponse.getAccessToken());
         ResponseCookie refreshCookie = jwtUtils.generateRefreshTokenCookie(loginResponse.getRefreshToken());
@@ -46,8 +47,10 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserDto>> getCurrentUser(Authentication authentication) {
-        UserDto userDto = userService.getCurrentUser(authentication);
+    public ResponseEntity<ApiResponse<UserDto>> getCurrentUser(
+            @RequestHeader("X-User-Name") String userEmail) {
+
+        UserDto userDto = userService.getUserByEmail(userEmail);
         return ResponseEntity.ok(ApiResponse.success("User profile fetched successfully", userDto));
     }
 

@@ -12,4 +12,5 @@ public interface UserService {
     String createNewAccessTokenFromRefresh(String refreshToken);
     void logOut(Authentication authentication);
     void logOutByToken(String refreshToken);
+    UserDto getUserByEmail(String userEmail);
 }
