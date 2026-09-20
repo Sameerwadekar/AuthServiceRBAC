@@ -2,7 +2,9 @@ package com.learn.auth.entities;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,14 +15,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+@Getter
+@Setter
 @Entity
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class User implements UserDetails {
+public class User extends BaseModel implements UserDetails {
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
 	private String id;
@@ -36,17 +40,41 @@ public class User implements UserDetails {
 	@JsonBackReference
 	private Role role;
 
+	private String tenant_id;
+
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+	private Set<UserPermission> userPermissions = new HashSet<>();
+
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		List<GrantedAuthority> authorities = new ArrayList<>();
 		if (role != null) {
 			authorities.add(new SimpleGrantedAuthority(role.getRoleName()));
-			if (role.getPermissions() != null) {
-				for (Permission permission : role.getPermissions()) {
-					authorities.add(new SimpleGrantedAuthority(permission.getName()));
+		}
+
+		Set<String> effectivePermissions = new HashSet<>();
+		if (role != null && role.getPermissions() != null) {
+			for (Permission permission : role.getPermissions()) {
+				effectivePermissions.add(permission.getName());
+			}
+		}
+
+		if (userPermissions != null) {
+			for (UserPermission up : userPermissions) {
+				if (up.getPermission() != null && up.getEffect() != null) {
+					if (up.getEffect() == PermissionEffect.ALLOW) {
+						effectivePermissions.add(up.getPermission().getName());
+					} else if (up.getEffect() == PermissionEffect.DENY) {
+						effectivePermissions.remove(up.getPermission().getName());
+					}
 				}
 			}
 		}
+
+		for (String perm : effectivePermissions) {
+			authorities.add(new SimpleGrantedAuthority(perm));
+		}
+
 		return authorities;
 	}
 
