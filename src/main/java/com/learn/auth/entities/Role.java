@@ -19,7 +19,6 @@ public class Role extends BaseModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long roleId;
     private String roleName;
-    private String tenant_id;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -28,4 +27,8 @@ public class Role extends BaseModel {
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
     private Set<Permission> permissions = new HashSet<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tenant_id",nullable = true)
+    private Tenant tenant;
 }

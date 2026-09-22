@@ -21,18 +21,17 @@ import com.learn.auth.security.jwt.AuthTokenFilter;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-//	private final AuthTokenFilter authTokenFilter;
+	private final AuthTokenFilter authTokenFilter;
 	private final AuthEntryPointJwt authEntryPointJwt;
 
-	public SecurityConfig(AuthEntryPointJwt authEntryPointJwt) {
-//		this.authTokenFilter = authTokenFilter;
+	public SecurityConfig(AuthTokenFilter authTokenFilter,AuthEntryPointJwt authEntryPointJwt) {
+		this.authTokenFilter = authTokenFilter;
 		this.authEntryPointJwt = authEntryPointJwt;
 	}
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 		httpSecurity.csrf(csrf -> csrf.disable())
-				// .cors(cors -> {}) // Handled at API Gateway; disabled here to prevent duplicate CORS headers
 				.exceptionHandling(ex -> ex.authenticationEntryPoint(authEntryPointJwt))
 				.sessionManagement(session ->
 						session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -41,12 +40,14 @@ public class SecurityConfig {
 				.httpBasic(basic -> basic.disable())
 				.requestCache(cache -> cache.disable())
 				.authorizeHttpRequests(req -> req
-						// Security is handled at the API Gateway level; all requests permitted downstream
+						.requestMatchers(
+								"/v3/api-docs/**",
+								"/swagger-ui/**",
+								"/swagger-ui.html"
+						).permitAll()
 						.anyRequest().permitAll()
-						// .requestMatchers("/", "/health", "/favicon.ico", "/users/register", "/users/login", "/users/refresh", "/auth/public-key").permitAll()
-						// .anyRequest().authenticated()
 				);
-		// httpSecurity.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
+		 httpSecurity.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 		return httpSecurity.build();
 	}
 

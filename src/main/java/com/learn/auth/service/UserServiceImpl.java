@@ -1,11 +1,15 @@
 package com.learn.auth.service;
 
 import com.learn.auth.dtos.UserDto;
+import com.learn.auth.dtos.UserInfo;
+import com.learn.auth.entities.Permission;
 import com.learn.auth.entities.RefreshToken;
 import com.learn.auth.entities.Role;
+import com.learn.auth.entities.Tenant;
 import com.learn.auth.entities.User;
 import com.learn.auth.exception.ResourceNotFoundException;
 import com.learn.auth.repositary.RoleRepositary;
+import com.learn.auth.repositary.UserDetailsProjection;
 import com.learn.auth.repositary.UserRepositary;
 import com.learn.auth.security.LoginRequest;
 import com.learn.auth.security.LoginResponse;
@@ -14,8 +18,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -98,10 +107,54 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto getUserByEmail(String userEmail) {
-        User user = userRepositary.findByEmail(userEmail).orElseThrow(()->new ResourceNotFoundException("email not found"));
-        return userToDto(user);
+    public UserInfo getUserDetails(UserDetails user) {
+        if (user == null || user.getUsername() == null) {
+            throw new ResourceNotFoundException("User is not authenticated");
+        }
+
+        List<UserDetailsProjection> rows = userRepositary.findUserDetailsByEmailNative(user.getUsername());
+        if (rows.isEmpty()) {
+            throw new ResourceNotFoundException("User not found with email: " + user.getUsername());
+        }
+
+        UserDetailsProjection firstRow = rows.get(0);
+
+        Tenant tenant = null;
+        if (firstRow.getTenantId() != null) {
+            tenant = new Tenant();
+            tenant.setId(firstRow.getTenantId());
+            tenant.setName(firstRow.getTenantName());
+        }
+
+        Set<Permission> permissions = new HashSet<>();
+
+        for (UserDetailsProjection row : rows) {
+            if (row.getPermissionId() != null) {
+                Permission p = new Permission();
+                p.setId(row.getPermissionId());
+                p.setName(row.getPermissionName());
+                permissions.add(p);
+            }
+        }
+
+        Role role = null;
+        if (firstRow.getRoleId() != null) {
+            role = new Role();
+            role.setRoleId(firstRow.getRoleId());
+            role.setRoleName(firstRow.getRoleName());
+            role.setTenant(tenant);
+            role.setPermissions(permissions);
+        }
+
+        return UserInfo.builder()
+                .userId(firstRow.getUserId())
+                .name(firstRow.getUserName())
+                .email(firstRow.getUserEmail())
+                .tenant(tenant)
+                .role(role)
+                .build();
     }
+
 
     private User dtoToUser(UserDto dto) {
         User user = new User();

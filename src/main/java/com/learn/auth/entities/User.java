@@ -40,10 +40,12 @@ public class User extends BaseModel implements UserDetails {
 	@JsonBackReference
 	private Role role;
 
-	private String tenant_id;
-
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	private Set<UserPermission> userPermissions = new HashSet<>();
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "tenant_id",nullable = true)
+	private Tenant tenant;
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {

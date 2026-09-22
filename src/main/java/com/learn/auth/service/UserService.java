@@ -1,9 +1,12 @@
 package com.learn.auth.service;
 
 import com.learn.auth.dtos.UserDto;
+import com.learn.auth.dtos.UserInfo;
 import com.learn.auth.security.LoginRequest;
 import com.learn.auth.security.LoginResponse;
+import org.springframework.security.core.AuthenticatedPrincipal;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 
 public interface UserService {
     UserDto createUser(UserDto userDto);
@@ -12,5 +15,5 @@ public interface UserService {
     String createNewAccessTokenFromRefresh(String refreshToken);
     void logOut(Authentication authentication);
     void logOutByToken(String refreshToken);
-    UserDto getUserByEmail(String userEmail);
+    UserInfo getUserDetails(UserDetails user);
 }

@@ -25,6 +25,7 @@ public class RefreshToken extends BaseModel {
 
     private boolean revoked = false;
 
-    @OneToOne
+    @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
 }

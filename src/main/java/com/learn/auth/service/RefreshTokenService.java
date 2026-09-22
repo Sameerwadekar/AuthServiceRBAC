@@ -25,9 +25,12 @@ public class RefreshTokenService {
 
     @Transactional
     public RefreshToken createRefreshToken(User user) {
-        refreshTokenRepository.deleteByUser(user);
-        RefreshToken refreshToken = new RefreshToken();
-        refreshToken.setUser(user);
+        RefreshToken refreshToken = refreshTokenRepository.findByUser(user)
+                .orElseGet(() -> {
+                    RefreshToken token = new RefreshToken();
+                    token.setUser(user);
+                    return token;
+                });
         refreshToken.setToken(UUID.randomUUID().toString());
         refreshToken.setExpiryDate(Instant.now().plusMillis(refreshExpirationMs));
         refreshToken.setRevoked(false);
