@@ -1,19 +1,20 @@
 package com.learn.auth.security.jwt;
 
+import com.learn.auth.entities.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseCookie;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.WebUtils;
+import org.springframework.util.StringUtils;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -27,15 +28,6 @@ public class JwtUtils {
 
     @Value("${spring.app.jwtExpirationMs:900000}")
     private long jwtExpirationMs;
-
-    @Value("${spring.app.refreshExpirationMs:604800000}")
-    private long refreshExpirationMs;
-
-    @Value("${spring.app.jwtCookieName:accessToken}")
-    private String jwtCookie;
-
-    @Value("${spring.app.jwtRefreshCookieName:refreshToken}")
-    private String jwtRefreshCookie;
 
     @Value("${spring.app.jwt.key-id:auth-key-001}")
     private String keyId;
@@ -51,68 +43,11 @@ public class JwtUtils {
         this.publicKey = publicKey;
     }
 
-    // Generate Access Token ResponseCookie from UserDetails
-    public ResponseCookie generateAccessTokenCookie(UserDetails userDetails) {
-        String jwt = generateTokenFromUsername(userDetails);
-        return generateAccessTokenCookie(jwt);
-    }
-
-    // Generate Access Token ResponseCookie from token string
-    public ResponseCookie generateAccessTokenCookie(String token) {
-        return ResponseCookie.from(jwtCookie, token)
-                .path("/")
-                .maxAge(jwtExpirationMs / 1000)
-                .httpOnly(true)
-                .secure(false) // Set to true in Production with HTTPS
-                .sameSite("Lax")
-                .build();
-    }
-
-    // Generate Refresh Token ResponseCookie
-    public ResponseCookie generateRefreshTokenCookie(String refreshTokenStr) {
-        return ResponseCookie.from(jwtRefreshCookie, refreshTokenStr)
-                .path("/")
-                .maxAge(refreshExpirationMs / 1000)
-                .httpOnly(true)
-                .secure(false) // Set to true in Production with HTTPS
-                .sameSite("Lax")
-                .build();
-    }
-
-    // Clear Access Token Cookie (for Logout)
-    public ResponseCookie getCleanAccessTokenCookie() {
-        return ResponseCookie.from(jwtCookie, "")
-                .path("/")
-                .maxAge(0)
-                .httpOnly(true)
-                .sameSite("Lax")
-                .build();
-    }
-
-    // Clear Refresh Token Cookie (for Logout)
-    public ResponseCookie getCleanRefreshTokenCookie() {
-        return ResponseCookie.from(jwtRefreshCookie, "")
-                .path("/")
-                .maxAge(0)
-                .httpOnly(true)
-                .sameSite("Lax")
-                .build();
-    }
-
-    // Extract Access Token from Cookie in Incoming Request
-    public String getJwtFromCookies(HttpServletRequest request) {
-        Cookie cookie = WebUtils.getCookie(request, jwtCookie);
-        if (cookie != null) {
-            return cookie.getValue();
-        }
-        return null;
-    }
-
-    // Extract Refresh Token from Cookie in Incoming Request
-    public String getRefreshTokenFromCookies(HttpServletRequest request) {
-        Cookie cookie = WebUtils.getCookie(request, jwtRefreshCookie);
-        if (cookie != null) {
-            return cookie.getValue();
+    // Extract Bearer token from Authorization header in incoming request
+    public String getJwtFromHeader(HttpServletRequest request) {
+        String headerAuth = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
+            return headerAuth.substring(7).trim();
         }
         return null;
     }
@@ -123,11 +58,23 @@ public class JwtUtils {
         String roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
-        return Jwts.builder()
+
+        String tenantId = null;
+        if (userDetails instanceof User user && user.getTenant() != null) {
+            tenantId = user.getTenant().getId();
+        }
+
+        var builder = Jwts.builder()
                 .header().keyId(keyId).and()
                 .issuer(issuer)
                 .subject(username)
-                .claim("roles", roles)
+                .claim("roles", roles);
+
+        if (tenantId != null && !tenantId.isBlank()) {
+            builder.claim("tenantId", tenantId);
+        }
+
+        return builder
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(privateKey, Jwts.SIG.RS256)
@@ -142,6 +89,20 @@ public class JwtUtils {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    // Extract tenantId from JWT claims (null for Super Admin)
+    public String getTenantIdFromJwtToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(publicKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return claims.get("tenantId", String.class);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // Verify token validity using public key

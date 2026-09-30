@@ -6,14 +6,23 @@ import com.learn.auth.entities.User;
 import java.util.Optional;
 
 
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface UserRepositary extends JpaRepository<User, String> {
+public interface UserRepositary extends JpaRepository<User, String>{
 	Optional<User> findByEmail(String email);
 	boolean existsByEmail(String email);
+	boolean existsByRole_RoleId(Long roleId);
+	List<User> findByTenant_Id(String tenantId);
+	List<User> findByTenant_IdIn(List<String> tenantIds);
+	Optional<User> findFirstByTenant_Id(String tenantId);
+	long countByTenant_Id(String tenantId);
+
+	@Query("SELECT u.tenant.id, COUNT(u) FROM User u WHERE u.tenant.id IN :tenantIds GROUP BY u.tenant.id")
+	List<Object[]> countUsersByTenantIds(@Param("tenantIds") List<String> tenantIds);
 
 	@Query(value = "SELECT " +
 			"u.id AS userId, " +

@@ -4,19 +4,35 @@ import com.learn.auth.entities.Permission;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.learn.auth.entities.Role;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface RoleRepositary extends JpaRepository<Role, Long>{
 	Optional<Role> findByRoleName(String roleName);
 	Optional<Role> findFirstByRoleName(String roleName);
 
+	List<Role> findByTenant_Id(String tenantId);
+	long countByTenant_Id(String tenantId);
+
+	@Query("SELECT r.tenant.id, COUNT(r) FROM Role r WHERE r.tenant.id IN :tenantIds GROUP BY r.tenant.id")
+	List<Object[]> countRolesByTenantIds(@Param("tenantIds") List<String> tenantIds);
+
+	List<Role> findByTenantIsNull();
+	Optional<Role> findByRoleNameAndTenant_Id(String roleName, String tenantId);
+	Optional<Role> findByRoleNameAndTenantIsNull(String roleName);
+	boolean existsByRoleNameAndTenant_Id(String roleName, String tenantId);
+	boolean existsByRoleNameAndTenantIsNull(String roleName);
+	boolean existsByRoleNameAndTenant_IdAndRoleIdNot(String roleName, String tenantId, Long roleId);
+	boolean existsByRoleNameAndTenantIsNullAndRoleIdNot(String roleName, Long roleId);
+
 	@Query("SELECT r FROM Role r")
 	Set<Role> findAllByName();
-	@Query(value = "SELECT p.* FROM permission p " +
-			"JOIN role_permissions rp ON p.permission_id = rp.permission_id " +
-			"WHERE rp.role_id = :roleId", nativeQuery = true)
+
+	@Query("SELECT p FROM Role r JOIN r.permissions p WHERE r.roleId = :roleId")
 	Set<Permission> getPermissionsByRoleId(@Param("roleId") Long roleId);
 }

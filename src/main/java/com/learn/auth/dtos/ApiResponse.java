@@ -1,38 +1,26 @@
 package com.learn.auth.dtos;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-@Schema(description = "Standard API response wrapper")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ApiResponse<T> {
 
-    @Schema(description = "Indicates whether the request was processed successfully", example = "true")
     private boolean success;
-
-    @Schema(description = "Human-readable status or error message", example = "Operation completed successfully")
     private String message;
-
-    @Schema(description = "Response payload data")
     private T data;
-
-    @Schema(description = "Optional metadata (pagination, filtering, etc.)")
     private Object meta;
-
-    @Schema(description = "Error details if the request failed")
     private Object errors;
-
-    @Schema(description = "Server timestamp when the response was generated")
     private LocalDateTime timestamp;
-
 
     public static <T> ApiResponse<T> success(String message) {
         return success(message, null, null);
@@ -64,4 +52,15 @@ public class ApiResponse<T> {
         response.setTimestamp(LocalDateTime.now());
         return response;
     }
+
+    public static <T> ApiResponse<List<T>> success(String message, Page<T> page) {
+        ApiResponse<List<T>> response = new ApiResponse<>();
+        response.setSuccess(true);
+        response.setMessage(message);
+        response.setData(page.getContent()); // Slices out the raw list of DTOs/Entities
+        response.setMeta(PaginationMeta.from(page)); // Maps pagination details to meta
+        response.setTimestamp(LocalDateTime.now());
+        return response;
+    }
+
 }

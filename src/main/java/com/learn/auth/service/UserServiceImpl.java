@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 @Service
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService  {
 
     private final PasswordEncoder passwordEncoder;
     private final RoleRepositary roleRepositary;
@@ -73,7 +73,6 @@ public class UserServiceImpl implements UserService {
         LoginResponse response = new LoginResponse();
         response.setAccessToken(accessToken);
         response.setRefreshToken(refreshToken.getToken());
-        response.setUserDto(userToDto(user));
         return response;
     }
 
@@ -127,6 +126,7 @@ public class UserServiceImpl implements UserService {
         }
 
         Set<Permission> permissions = new HashSet<>();
+        Set<String> permissionNames = new HashSet<>();
 
         for (UserDetailsProjection row : rows) {
             if (row.getPermissionId() != null) {
@@ -134,16 +134,23 @@ public class UserServiceImpl implements UserService {
                 p.setId(row.getPermissionId());
                 p.setName(row.getPermissionName());
                 permissions.add(p);
+                if (row.getPermissionName() != null) {
+                    permissionNames.add(row.getPermissionName());
+                }
             }
         }
 
         Role role = null;
+        Set<String> roles = new HashSet<>();
         if (firstRow.getRoleId() != null) {
             role = new Role();
             role.setRoleId(firstRow.getRoleId());
             role.setRoleName(firstRow.getRoleName());
             role.setTenant(tenant);
             role.setPermissions(permissions);
+            if (firstRow.getRoleName() != null) {
+                roles.add(firstRow.getRoleName());
+            }
         }
 
         return UserInfo.builder()
@@ -152,6 +159,8 @@ public class UserServiceImpl implements UserService {
                 .email(firstRow.getUserEmail())
                 .tenant(tenant)
                 .role(role)
+                .roles(roles)
+                .permissions(permissionNames)
                 .build();
     }
 

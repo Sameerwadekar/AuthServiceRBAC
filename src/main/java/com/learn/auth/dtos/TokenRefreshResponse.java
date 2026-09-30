@@ -1,15 +1,17 @@
 package com.learn.auth.dtos;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UpdateRolePermissionsRequest {
+public class TokenRefreshResponse {
 
-    private List<Long> permissionIds;
+    private String accessToken;
+
+    private String refreshToken;
 }

@@ -58,10 +58,14 @@ public class DataSeeder implements CommandLineRunner {
 
     private Map<String, Permission> seedPermissions() {
         List<String> permissionNames = List.of(
-                "ROLE_PERMISSION_UPDATE",
-                "USER_READ", "USER_CREATE", "USER_UPDATE", "USER_DELETE",
-                "ROLE_READ", "ROLE_CREATE", "ROLE_UPDATE", "ROLE_DELETE",
-                "PERMISSION_READ", "PERMISSION_CREATE", "PERMISSION_UPDATE", "PERMISSION_DELETE"
+                "dashboard.view",
+                "tenant.view", "tenant.create", "tenant.update", "tenant.delete", "tenant.password_reset",
+                "project.view", "project.create", "project.edit", "project.delete",
+                "task.view", "task.create", "task.edit", "task.delete",
+                "calendar.view", "analytics.view", "report.view",
+                "role.view", "role.create", "role.update", "role.delete", "role.permission_update",
+                "user.view", "user.create", "user.update", "user.delete",
+                "settings.view", "settings.manage"
         );
 
         Map<String, Permission> permissionsMap = new HashMap<>();
@@ -82,14 +86,19 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedRolesAndPermissions(Map<String, Permission> permissionsMap) {
-        // 1. ROLE_SUPER_ADMIN (Gets ALL permissions)
-        createOrUpdateRole("ROLE_SUPER_ADMIN", new HashSet<>(permissionsMap.values()));
+        Set<Permission> superAdminPerms = new HashSet<>();
+        List<String> superAdminPermKeys = List.of(
+                "tenant.view", "tenant.create", "tenant.update", "tenant.delete", "tenant.password_reset"
+        );
 
-        // 2. ROLE_ADMIN
-        createRoleIfNotFound("ROLE_ADMIN");
+        for (String key : superAdminPermKeys) {
+            Permission p = permissionsMap.get(key);
+            if (p != null) {
+                superAdminPerms.add(p);
+            }
+        }
 
-        // 3. ROLE_USER
-        createRoleIfNotFound("ROLE_USER");
+        createOrUpdateRole("ROLE_SUPER_ADMIN", superAdminPerms);
     }
 
     private void createOrUpdateRole(String roleName, Set<Permission> permissions) {
@@ -103,15 +112,6 @@ public class DataSeeder implements CommandLineRunner {
         role.setPermissions(permissions);
         roleRepositary.save(role);
         log.info("Seeded role '{}' with {} permissions", roleName, permissions.size());
-    }
-
-    private void createRoleIfNotFound(String roleName) {
-        if (roleRepositary.findFirstByRoleName(roleName).isEmpty()) {
-            Role role = new Role();
-            role.setRoleName(roleName);
-            roleRepositary.save(role);
-            log.info("Seeded role '{}'", roleName);
-        }
     }
 
     private void seedSuperAdminUser() {

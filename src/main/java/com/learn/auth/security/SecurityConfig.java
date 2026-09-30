@@ -24,30 +24,26 @@ public class SecurityConfig {
 	private final AuthTokenFilter authTokenFilter;
 	private final AuthEntryPointJwt authEntryPointJwt;
 
-	public SecurityConfig(AuthTokenFilter authTokenFilter,AuthEntryPointJwt authEntryPointJwt) {
+	public SecurityConfig(AuthTokenFilter authTokenFilter, AuthEntryPointJwt authEntryPointJwt) {
 		this.authTokenFilter = authTokenFilter;
 		this.authEntryPointJwt = authEntryPointJwt;
 	}
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-		httpSecurity.csrf(csrf -> csrf.disable())
+		httpSecurity
+				.csrf(csrf -> csrf.disable())
+				.cors(cors -> cors.disable()) // CORS handled exclusively at the API Gateway perimeter
 				.exceptionHandling(ex -> ex.authenticationEntryPoint(authEntryPointJwt))
-				.sessionManagement(session ->
-						session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-				)
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.formLogin(form -> form.disable())
 				.httpBasic(basic -> basic.disable())
 				.requestCache(cache -> cache.disable())
 				.authorizeHttpRequests(req -> req
-						.requestMatchers(
-								"/v3/api-docs/**",
-								"/swagger-ui/**",
-								"/swagger-ui.html"
-						).permitAll()
 						.anyRequest().permitAll()
 				);
-		 httpSecurity.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
+
+		httpSecurity.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
 		return httpSecurity.build();
 	}
 

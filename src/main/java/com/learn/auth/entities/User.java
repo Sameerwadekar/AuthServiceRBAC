@@ -54,6 +54,14 @@ public class User extends BaseModel implements UserDetails {
 			authorities.add(new SimpleGrantedAuthority(role.getRoleName()));
 		}
 
+		for (String perm : getEffectivePermissions()) {
+			authorities.add(new SimpleGrantedAuthority(perm));
+		}
+
+		return authorities;
+	}
+
+	public Set<String> getEffectivePermissions() {
 		Set<String> effectivePermissions = new HashSet<>();
 		if (role != null && role.getPermissions() != null) {
 			for (Permission permission : role.getPermissions()) {
@@ -73,11 +81,7 @@ public class User extends BaseModel implements UserDetails {
 			}
 		}
 
-		for (String perm : effectivePermissions) {
-			authorities.add(new SimpleGrantedAuthority(perm));
-		}
-
-		return authorities;
+		return effectivePermissions;
 	}
 
 	@Override
