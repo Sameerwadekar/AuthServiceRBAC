@@ -1,8 +1,8 @@
 package com.learn.auth.service;
 
+import com.learn.auth.dtos.RoleSummary;
 import com.learn.auth.dtos.UserDto;
 import com.learn.auth.dtos.UserInfo;
-import com.learn.auth.entities.Permission;
 import com.learn.auth.entities.RefreshToken;
 import com.learn.auth.entities.Role;
 import com.learn.auth.entities.Tenant;
@@ -125,32 +125,19 @@ public class UserServiceImpl implements UserService  {
             tenant.setName(firstRow.getTenantName());
         }
 
-        Set<Permission> permissions = new HashSet<>();
-        Set<String> permissionNames = new HashSet<>();
-
+        Set<String> permissions = new HashSet<>();
         for (UserDetailsProjection row : rows) {
-            if (row.getPermissionId() != null) {
-                Permission p = new Permission();
-                p.setId(row.getPermissionId());
-                p.setName(row.getPermissionName());
-                permissions.add(p);
-                if (row.getPermissionName() != null) {
-                    permissionNames.add(row.getPermissionName());
-                }
+            if (row.getPermissionName() != null && !row.getPermissionName().isBlank()) {
+                permissions.add(row.getPermissionName());
             }
         }
 
-        Role role = null;
-        Set<String> roles = new HashSet<>();
+        RoleSummary role = null;
         if (firstRow.getRoleId() != null) {
-            role = new Role();
-            role.setRoleId(firstRow.getRoleId());
-            role.setRoleName(firstRow.getRoleName());
-            role.setTenant(tenant);
-            role.setPermissions(permissions);
-            if (firstRow.getRoleName() != null) {
-                roles.add(firstRow.getRoleName());
-            }
+            role = RoleSummary.builder()
+                    .roleId(firstRow.getRoleId())
+                    .roleName(firstRow.getRoleName())
+                    .build();
         }
 
         return UserInfo.builder()
@@ -159,8 +146,7 @@ public class UserServiceImpl implements UserService  {
                 .email(firstRow.getUserEmail())
                 .tenant(tenant)
                 .role(role)
-                .roles(roles)
-                .permissions(permissionNames)
+                .permissions(permissions)
                 .build();
     }
 

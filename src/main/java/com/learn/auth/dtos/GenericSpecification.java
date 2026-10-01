@@ -6,17 +6,23 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class GenericSpecification {
 
     /**
-     * Builds a specification for tenant-isolated entities with optional search keywords.
+     * Builds a specification for tenant-isolated entities with optional search keywords and exact filters.
      *
      * @param tenantId      The UUID string of the tenant (optional/nullable)
      * @param searchKeyword Text to search across specified fields
      * @param searchFields  Entity field names to apply LIKE matching on
+     * @param exactFilters  Map of field name to exact value (e.g. status)
      */
-    public static <T> Specification<T> searchAndFilter(String tenantId, String searchKeyword, List<String> searchFields) {
+    public static <T> Specification<T> searchAndFilter(
+            String tenantId,
+            String searchKeyword,
+            List<String> searchFields,
+            Map<String, Object> exactFilters) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -35,7 +41,19 @@ public class GenericSpecification {
                 }
             }
 
-            // 2. Keyword search across specified fields (OR condition)
+            // 2. Exact match filters (e.g. status)
+            if (exactFilters != null && !exactFilters.isEmpty()) {
+                for (Map.Entry<String, Object> entry : exactFilters.entrySet()) {
+                    if (entry.getValue() != null) {
+                        try {
+                            predicates.add(cb.equal(root.get(entry.getKey()), entry.getValue()));
+                        } catch (Exception ignored) {
+                        }
+                    }
+                }
+            }
+
+            // 3. Keyword search across specified fields (OR condition)
             if (searchKeyword != null && !searchKeyword.isBlank() && searchFields != null && !searchFields.isEmpty()) {
                 String matchExpression = "%" + searchKeyword.trim().toLowerCase() + "%";
                 List<Predicate> searchPredicates = new ArrayList<>();
@@ -58,11 +76,11 @@ public class GenericSpecification {
         };
     }
 
-    public static <T> Specification<T> search(String searchKeyword, List<String> searchFields) {
-        return searchAndFilter(null, searchKeyword, searchFields);
+    public static <T> Specification<T> searchAndFilter(String tenantId, String searchKeyword, List<String> searchFields) {
+        return searchAndFilter(tenantId, searchKeyword, searchFields, null);
     }
 
     public static <T> Specification<T> search(String tenantId, String searchKeyword, List<String> searchFields) {
-        return searchAndFilter(tenantId, searchKeyword, searchFields);
+        return searchAndFilter(tenantId, searchKeyword, searchFields, null);
     }
 }

@@ -65,6 +65,7 @@ public class DataSeeder implements CommandLineRunner {
                 "calendar.view", "analytics.view", "report.view",
                 "role.view", "role.create", "role.update", "role.delete", "role.permission_update",
                 "user.view", "user.create", "user.update", "user.delete",
+                "department.view", "department.create", "department.update", "department.delete",
                 "settings.view", "settings.manage"
         );
 

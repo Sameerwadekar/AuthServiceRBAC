@@ -155,7 +155,6 @@ public class RoleServiceImpl implements RoleService {
             }
         }
 
-        // Validate uniqueness collision with another role
         if (targetTenant != null) {
             if (roleRepositary.existsByRoleNameAndTenant_IdAndRoleIdNot(targetRoleName, targetTenant.getId(), roleId)) {
                 throw new IllegalArgumentException("Role '" + targetRoleName + "' already exists for tenant: " + targetTenant.getName());

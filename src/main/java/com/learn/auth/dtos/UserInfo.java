@@ -1,6 +1,6 @@
 package com.learn.auth.dtos;
 
-import com.learn.auth.entities.Role;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.learn.auth.entities.Tenant;
 import lombok.*;
 
@@ -11,13 +11,13 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserInfo {
 
     private String userId;
     private String name;
     private String email;
     private Tenant tenant;
-    private Role role;
-    private Set<String> roles;
+    private RoleSummary role;
     private Set<String> permissions;
 }
