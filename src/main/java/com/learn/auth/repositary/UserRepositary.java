@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface UserRepositary extends JpaRepository<User, String>{
@@ -20,6 +21,12 @@ public interface UserRepositary extends JpaRepository<User, String>{
 	List<User> findByTenant_IdIn(List<String> tenantIds);
 	Optional<User> findFirstByTenant_Id(String tenantId);
 	long countByTenant_Id(String tenantId);
+	long countByTenant_IdAndRole_RoleId(String tenantId, Long roleId);
+
+	@Query("SELECT u.role.roleId, COUNT(u) FROM User u WHERE u.tenant.id = :tenantId AND u.role.roleId IN :roleIds GROUP BY u.role.roleId")
+	List<Object[]> countUsersByTenantIdAndRoleIds(@Param("tenantId") String tenantId, @Param("roleIds") Collection<Long> roleIds);
+
+	List<User> findTop2ByTenant_IdAndRole_RoleIdOrderByCreatedAtAsc(String tenantId, Long roleId);
 
 	@Query("SELECT u.tenant.id, COUNT(u) FROM User u WHERE u.tenant.id IN :tenantIds GROUP BY u.tenant.id")
 	List<Object[]> countUsersByTenantIds(@Param("tenantIds") List<String> tenantIds);

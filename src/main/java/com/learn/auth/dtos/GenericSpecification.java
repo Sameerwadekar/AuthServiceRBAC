@@ -41,12 +41,16 @@ public class GenericSpecification {
                 }
             }
 
-            // 2. Exact match filters (e.g. status)
+            // 2. Exact match filters (e.g. status, department.id)
             if (exactFilters != null && !exactFilters.isEmpty()) {
                 for (Map.Entry<String, Object> entry : exactFilters.entrySet()) {
                     if (entry.getValue() != null) {
                         try {
-                            predicates.add(cb.equal(root.get(entry.getKey()), entry.getValue()));
+                            Path<?> path = root;
+                            for (String part : entry.getKey().split("\\.")) {
+                                path = path.get(part);
+                            }
+                            predicates.add(cb.equal(path, entry.getValue()));
                         } catch (Exception ignored) {
                         }
                     }

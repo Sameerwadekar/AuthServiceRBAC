@@ -56,31 +56,85 @@ public class DataSeeder implements CommandLineRunner {
         seedSuperAdminUser();
     }
 
+    private record PermissionSeed(String name, String description) {}
+
     private Map<String, Permission> seedPermissions() {
-        List<String> permissionNames = List.of(
-                "dashboard.view",
-                "tenant.view", "tenant.create", "tenant.update", "tenant.delete", "tenant.password_reset",
-                "project.view", "project.create", "project.edit", "project.delete",
-                "task.view", "task.create", "task.edit", "task.delete",
-                "calendar.view", "analytics.view", "report.view",
-                "role.view", "role.create", "role.update", "role.delete", "role.permission_update",
-                "user.view", "user.create", "user.update", "user.delete",
-                "department.view", "department.create", "department.update", "department.delete",
-                "settings.view", "settings.manage"
+        List<PermissionSeed> permissionDefinitions = List.of(
+                // Dashboard
+                new PermissionSeed("dashboard.view", "View workspace dashboard overview, summary metrics, and activity charts"),
+
+                // Tenant Management
+                new PermissionSeed("tenant.view", "View tenant organization profiles, subscriptions, and configuration"),
+                new PermissionSeed("tenant.create", "Create and onboard new organization tenants into the system"),
+                new PermissionSeed("tenant.update", "Update organization details, settings, and subscription plans"),
+                new PermissionSeed("tenant.delete", "Delete or permanently decommission organization tenants"),
+                new PermissionSeed("tenant.password_reset", "Reset credentials and administrative access for tenant accounts"),
+
+                // Projects
+                new PermissionSeed("project.view", "View projects, project workspaces, timelines, and roadmaps"),
+                new PermissionSeed("project.create", "Create new projects and initialize project settings"),
+                new PermissionSeed("project.edit", "Edit project details, milestones, status, and members"),
+                new PermissionSeed("project.delete", "Delete or archive existing projects"),
+
+                // Tasks
+                new PermissionSeed("task.view", "View task boards, sprint backlogs, and task details"),
+                new PermissionSeed("task.create", "Create new tasks, work items, and assignees"),
+                new PermissionSeed("task.edit", "Update task descriptions, priorities, deadlines, and status"),
+                new PermissionSeed("task.delete", "Delete or remove tasks from project boards"),
+
+                // Calendar, Analytics & Reports
+                new PermissionSeed("calendar.view", "View team schedules, milestone deadlines, and shared calendars"),
+                new PermissionSeed("analytics.view", "Access business intelligence dashboards and operational performance analytics"),
+                new PermissionSeed("report.view", "Generate and view organizational compliance, productivity, and audit reports"),
+
+                // Roles & Permissions
+                new PermissionSeed("role.view", "View roles, assigned permission sets, and security scope definitions"),
+                new PermissionSeed("role.create", "Create new custom roles and define organizational access boundaries"),
+                new PermissionSeed("role.update", "Edit existing role information, titles, and department associations"),
+                new PermissionSeed("role.delete", "Delete custom roles without assigned members"),
+                new PermissionSeed("role.permission_update", "Grant or revoke specific functional permissions for roles"),
+
+                // Users & Team Members
+                new PermissionSeed("user.view", "View user directory, member profiles, and team allocations"),
+                new PermissionSeed("user.create", "Invite and onboard new users to the organization"),
+                new PermissionSeed("user.update", "Edit user details, roles, department assignments, and account status"),
+                new PermissionSeed("user.delete", "Deactivate or remove user accounts from the organization"),
+
+                // Departments & Business Units
+                new PermissionSeed("department.view", "View departments, business units, and organizational hierarchies"),
+                new PermissionSeed("department.create", "Create new departments, business units, and operational cost centers"),
+                new PermissionSeed("department.update", "Edit department names, descriptions, and structural metadata"),
+                new PermissionSeed("department.delete", "Delete or deactivate organizational departments"),
+
+                // Settings
+                new PermissionSeed("settings.view", "View organization security policies, integrations, and preferences"),
+                new PermissionSeed("settings.manage", "Configure system settings, authentication rules, and workspace integrations")
         );
 
         Map<String, Permission> permissionsMap = new HashMap<>();
 
-        for (String permName : permissionNames) {
-            Permission permission = permissionRepository.findFirstByName(permName)
+        for (PermissionSeed def : permissionDefinitions) {
+            Permission permission = permissionRepository.findFirstByName(def.name())
                     .orElseGet(() -> {
                         Permission p = new Permission();
-                        p.setName(permName);
-                        Permission saved = permissionRepository.save(p);
-                        log.info("Seeded permission: {}", permName);
-                        return saved;
+                        p.setName(def.name());
+                        return p;
                     });
-            permissionsMap.put(permName, permission);
+
+            boolean isNew = (permission.getId() == null);
+            boolean needsUpdate = permission.getDescription() == null || !permission.getDescription().equals(def.description());
+
+            if (isNew || needsUpdate) {
+                permission.setDescription(def.description());
+                permission = permissionRepository.save(permission);
+                if (isNew) {
+                    log.info("Seeded permission: {} with description: '{}'", def.name(), def.description());
+                } else {
+                    log.info("Updated description for permission: {}", def.name());
+                }
+            }
+
+            permissionsMap.put(def.name(), permission);
         }
 
         return permissionsMap;

@@ -1,7 +1,7 @@
 package com.learn.auth.dtos;
 
 import com.learn.auth.entities.Department;
-import com.learn.auth.entities.DepartmentStatus;
+import com.learn.auth.entities.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +16,7 @@ public class DepartmentResponse {
     private Integer id;
     private String name;
     private String description;
-    private DepartmentStatus status;
+    private Status status;
     private String tenantId;
     private String createdAt;
     private String lastModifiedAt;

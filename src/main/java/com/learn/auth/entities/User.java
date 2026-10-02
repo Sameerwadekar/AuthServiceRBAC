@@ -33,6 +33,9 @@ public class User extends BaseModel implements UserDetails {
 	@Column(unique = true)
 	private String email;
 
+	@Column(name = "avatar_url")
+	private String avatarUrl;
+
 	@JsonIgnore
 	private String password;
 

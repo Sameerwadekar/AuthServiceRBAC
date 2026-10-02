@@ -1,26 +1,19 @@
 package com.learn.auth.dtos;
 
-import com.learn.auth.entities.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UpdateRoleRequest {
+public class PermissionResponse {
 
-    private String roleName;
-
-    private Integer departmentId;
-
+    private Long id;
+    private String name;
     private String description;
-
-    private Status status;
-
-    private List<Long> permissionIds;
+    private String action;
+    private String resource;
 }

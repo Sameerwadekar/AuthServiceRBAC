@@ -21,4 +21,6 @@ public class Permission extends BaseModel {
     private Long id;
 
     private String name;
+
+    private String description;
 }

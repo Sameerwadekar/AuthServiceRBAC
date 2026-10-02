@@ -32,7 +32,7 @@ public class Department extends BaseModel {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     @Builder.Default
-    private DepartmentStatus status = DepartmentStatus.ACTIVE;
+    private Status status = Status.ACTIVE;
 
     public String getTenant_id() {
         return tenantId;

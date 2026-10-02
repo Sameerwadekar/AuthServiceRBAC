@@ -1,7 +1,7 @@
 package com.learn.auth.controller;
 
 import com.learn.auth.dtos.*;
-import com.learn.auth.entities.DepartmentStatus;
+import com.learn.auth.entities.Status;
 import com.learn.auth.service.DepartmentService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -37,7 +37,7 @@ public class DepartmentController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<DepartmentResponse>>> getAllDepartments(
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) DepartmentStatus status,
+            @RequestParam(required = false) Status status,
             @PageableDefault(page = 0, size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Page<DepartmentResponse> departments = departmentService.getAllDepartments(search, status, pageable);
         return ResponseEntity.ok(ApiResponse.success("Departments fetched successfully", departments));

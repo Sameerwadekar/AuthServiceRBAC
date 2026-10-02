@@ -1,9 +1,19 @@
 package com.learn.auth.controller;
 
-import com.learn.auth.dtos.*;
+import com.learn.auth.dtos.ApiResponse;
+import com.learn.auth.dtos.CreateRoleRequest;
+import com.learn.auth.dtos.RoleResponse;
+import com.learn.auth.dtos.RoleStatsResponse;
+import com.learn.auth.dtos.UpdateRolePermissionsRequest;
+import com.learn.auth.dtos.UpdateRoleRequest;
 import com.learn.auth.entities.Permission;
+import com.learn.auth.entities.Status;
 import com.learn.auth.service.RoleService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +32,13 @@ public class RoleController {
         this.roleService = roleService;
     }
 
+    @PreAuthorize("hasAuthority('role.view')")
+    @GetMapping({"/stats"})
+    public ResponseEntity<ApiResponse<RoleStatsResponse>> getRoleStats() {
+        RoleStatsResponse stats = roleService.getRoleStats();
+        return ResponseEntity.ok(ApiResponse.success("Role stats fetched successfully", stats));
+    }
+
     @PreAuthorize("hasAuthority('role.create')")
     @PostMapping
     public ResponseEntity<ApiResponse<RoleResponse>> createRole(@RequestBody @Valid CreateRoleRequest request) {
@@ -29,21 +46,18 @@ public class RoleController {
         return new ResponseEntity<>(ApiResponse.success("Role created successfully", created), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('role.view')")
     @GetMapping
     public ResponseEntity<ApiResponse<List<RoleResponse>>> getAllRoles(
-            @RequestParam(required = false) String tenantId,
-            @RequestParam(required = false) String tenantName,
-            @RequestParam(required = false) Boolean globalOnly) {
-        List<RoleResponse> roles = roleService.getAllRoles(tenantId, tenantName, globalOnly);
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Status status,
+            @RequestParam(required = false) Integer departmentId,
+            @PageableDefault(page = 0, size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<RoleResponse> roles = roleService.getAllRoles(search, status, departmentId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Roles fetched successfully", roles));
     }
 
-    @GetMapping("/tenant/{tenantId}")
-    public ResponseEntity<ApiResponse<List<RoleResponse>>> getRolesByTenant(@PathVariable String tenantId) {
-        List<RoleResponse> roles = roleService.getRolesByTenantId(tenantId);
-        return ResponseEntity.ok(ApiResponse.success("Roles for tenant fetched successfully", roles));
-    }
-
+    @PreAuthorize("hasAuthority('role.view')")
     @GetMapping("/{roleId}")
     public ResponseEntity<ApiResponse<RoleResponse>> getRoleById(@PathVariable Long roleId) {
         RoleResponse role = roleService.getRoleById(roleId);
@@ -66,6 +80,7 @@ public class RoleController {
         return ResponseEntity.ok(ApiResponse.success("Role deleted successfully"));
     }
 
+    @PreAuthorize("hasAuthority('role.view')")
     @GetMapping("/{roleId}/permissions")
     public ResponseEntity<ApiResponse<Set<Permission>>> getPermissionByRole(@PathVariable Long roleId) {
         Set<Permission> permissions = roleService.getPermissionsByRoleId(roleId);

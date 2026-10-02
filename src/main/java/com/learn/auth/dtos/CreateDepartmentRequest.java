@@ -1,6 +1,6 @@
 package com.learn.auth.dtos;
 
-import com.learn.auth.entities.DepartmentStatus;
+import com.learn.auth.entities.Status;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -21,5 +21,5 @@ public class CreateDepartmentRequest {
     private String description;
 
     @Builder.Default
-    private DepartmentStatus status = DepartmentStatus.ACTIVE;
+    private Status status = Status.ACTIVE;
 }

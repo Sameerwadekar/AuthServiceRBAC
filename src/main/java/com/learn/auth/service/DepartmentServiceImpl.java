@@ -2,7 +2,7 @@ package com.learn.auth.service;
 
 import com.learn.auth.dtos.*;
 import com.learn.auth.entities.Department;
-import com.learn.auth.entities.DepartmentStatus;
+import com.learn.auth.entities.Status;
 import com.learn.auth.exception.ResourceNotFoundException;
 import com.learn.auth.repositary.DepartmentRepository;
 import com.learn.auth.repositary.TenantRepository;
@@ -55,7 +55,7 @@ public class DepartmentServiceImpl implements DepartmentService {
         Department department = Department.builder()
                 .name(deptName)
                 .description(request.getDescription() != null ? request.getDescription().trim() : null)
-                .status(request.getStatus() != null ? request.getStatus() : DepartmentStatus.ACTIVE)
+                .status(request.getStatus() != null ? request.getStatus() : Status.ACTIVE)
                 .tenantId(tenantId)
                 .build();
 
@@ -67,7 +67,7 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<DepartmentResponse> getAllDepartments(String search, DepartmentStatus status, Pageable pageable) {
+    public Page<DepartmentResponse> getAllDepartments(String search, Status status, Pageable pageable) {
         String tenantId = requireTenantContext();
 
         Map<String, Object> exactFilters = status != null ? Map.of("status", status) : null;

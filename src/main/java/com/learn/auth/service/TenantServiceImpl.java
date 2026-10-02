@@ -86,6 +86,7 @@ public class TenantServiceImpl implements TenantService {
             permissionRepository.findFirstByName(pName).ifPresent(permissions::add);
         }
         adminRole.setPermissions(permissions);
+        adminRole.setDescription("Workspace Administrator with full company management permissions");
         Role savedRole = roleRepositary.save(adminRole);
 
         // 3. Create initial Company Admin user
